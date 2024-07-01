@@ -5,8 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="40fa6cd7-166d-41e6-a4f4-efdf17475d7c" name="Changes" comment="CT 重建代码">
+<<<<<<< HEAD
       <change afterPath="$PROJECT_DIR$/OpenCLKernel.cl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/CT Reconstruction.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/CT Reconstruction.iml" afterDir="false" />
+=======
+>>>>>>> 2402be0ca153a2479af57261fdebafde5174daaa
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -44,7 +47,11 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/Baikalfische/CT_Reconstruction.git&quot;,
+<<<<<<< HEAD
     &quot;accountId&quot;: &quot;c10ddf70-d90d-4767-9944-b0b40c10dedb&quot;
+=======
+    &quot;accountId&quot;: &quot;d3b517fe-c823-4865-b65c-14c9dc585a37&quot;
+>>>>>>> 2402be0ca153a2479af57261fdebafde5174daaa
   }
 }</component>
   <component name="ProjectColorInfo">{
@@ -78,7 +85,11 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+<<<<<<< HEAD
     &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+=======
+    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;,
+>>>>>>> 2402be0ca153a2479af57261fdebafde5174daaa
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -209,12 +220,16 @@
       <workItem from="1719343267232" duration="717000" />
       <workItem from="1719403182420" duration="1173000" />
       <workItem from="1719404637388" duration="84000" />
+<<<<<<< HEAD
       <workItem from="1719433770126" duration="394000" />
       <workItem from="1719471342977" duration="95000" />
       <workItem from="1719471498292" duration="81000" />
       <workItem from="1719475901330" duration="2096000" />
       <workItem from="1719480291466" duration="3542000" />
       <workItem from="1719668946791" duration="235000" />
+=======
+      <workItem from="1719433770126" duration="878000" />
+>>>>>>> 2402be0ca153a2479af57261fdebafde5174daaa
     </task>
     <servers />
   </component>
