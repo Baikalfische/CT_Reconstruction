@@ -316,7 +316,7 @@ def addGrids_normal(self, grid1, grid2):
         cl.enqueue_copy(self.queue, result, result_buf).wait()
         return result
 
-def add_grids_texture(self, grid1, grid2):
+def addGrids_texture(self, grid1, grid2):
         # 创建 OpenCL 图像对象
         image_format = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT)
         grid1_img = cl.image_from_array(self.ctx, grid1, 4)
