@@ -287,3 +287,51 @@ def backproject_fanbeam(fanogram, size_x, size_y, image_spacing, d_si, d_sd):
                 bp_sum += value
             reco.set_at_index(i_x, i_y, bp_sum/2) #update value
     return reco
+
+# get platforms (i.e. GPU/CPU)
+platform = cl.get_platforms()
+# use the GPU which is in 2nd pos
+GPU = platform[1].get_devices()
+# create context (with GPU)
+ctx = cl.Context(GPU)
+# create commandqueue to communicate between host and device
+queue = cl.CommandQueue(ctx)
+# load .cl file
+kernel = open("OpenCLKernel.cl").read()
+# Build .cl file
+prg = cl.Program(ctx, kernel).build()
+
+def addGrids_normal(self, grid1, grid2):
+        # 创建 OpenCL 缓冲区
+        mf = cl.mem_flags
+        grid1_buf = cl.Buffer(self.ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid1)
+        grid2_buf = cl.Buffer(self.ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid2)
+        result_buf = cl.Buffer(self.ctx, mf.WRITE_ONLY, grid1.nbytes)
+
+        # 设置内核参数并执行
+        global_size = (grid1.shape[1], grid1.shape[0])
+        prg.add_grids_normal(queue, global_size, None, grid1_buf, grid2_buf, result_buf, np.int32(grid1.shape[1]), np.int32(grid1.shape[0]))
+        #kernel.set_args(grid1_buf, grid2_buf, result_buf, np.int32(grid1.shape[1]), np.int32(grid1.shape[0])
+        result = np.empty_like(grid1)
+        cl.enqueue_copy(self.queue, result, result_buf).wait()
+        return result
+
+def add_grids_texture(self, grid1, grid2):
+        # 创建 OpenCL 图像对象
+        image_format = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT)
+        grid1_img = cl.image_from_array(self.ctx, grid1, 4)
+        grid2_img = cl.image_from_array(self.ctx, grid2, 4)
+        result_img = cl.Image(self.ctx, cl.mem_flags.WRITE_ONLY, image_format, shape=(grid1.shape[1], grid1.shape[0]))
+
+        # 设置内核参数并执行
+        kernel = self.program.add_grids_texture
+        kernel.set_args(grid1_img, grid2_img, result_img)
+
+        # 执行内核
+        global_size = (grid1.shape[1], grid1.shape[0])
+        cl.enqueue_nd_range_kernel(self.queue, kernel, global_size, None)
+        
+        # 读取结果
+        result = np.empty_like(grid1)
+        cl.enqueue_copy(self.queue, result, result_img, origin=(0, 0), region=(grid1.shape[1], grid1.shape[0])).wait()
+        return result
