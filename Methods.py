@@ -288,50 +288,102 @@ def backproject_fanbeam(fanogram, size_x, size_y, image_spacing, d_si, d_sd):
             reco.set_at_index(i_x, i_y, bp_sum/2) #update value
     return reco
 
+
 # get platforms (i.e. GPU/CPU)
 platform = cl.get_platforms()
 # use the GPU which is in 2nd pos
-GPU = platform[1].get_devices()
+GPU = platform[0].get_devices()
 # create context (with GPU)
 ctx = cl.Context(GPU)
 # create commandqueue to communicate between host and device
 queue = cl.CommandQueue(ctx)
 # load .cl file
-kernel = open("OpenCLKernel.cl").read()
+kernel = open("OpenCLKernel.cl", "r", encoding="utf-8").read()
 # Build .cl file
 prg = cl.Program(ctx, kernel).build()
 
-def addGrids_normal(self, grid1, grid2):
+def addGrids_normal(grid1, grid2):
+        grid1 = np.array(grid1.buffer, dtype=np.float32)
+        grid2 = np.array(grid2.buffer, dtype=np.float32)
         # 创建 OpenCL 缓冲区
         mf = cl.mem_flags
-        grid1_buf = cl.Buffer(self.ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid1)
-        grid2_buf = cl.Buffer(self.ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid2)
-        result_buf = cl.Buffer(self.ctx, mf.WRITE_ONLY, grid1.nbytes)
+        grid1_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid1)
+        grid2_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid2)
+        result_buf = cl.Buffer(ctx, mf.WRITE_ONLY, grid1.nbytes)
 
         # 设置内核参数并执行
         global_size = (grid1.shape[1], grid1.shape[0])
         prg.add_grids_normal(queue, global_size, None, grid1_buf, grid2_buf, result_buf, np.int32(grid1.shape[1]), np.int32(grid1.shape[0]))
-        #kernel.set_args(grid1_buf, grid2_buf, result_buf, np.int32(grid1.shape[1]), np.int32(grid1.shape[0])
-        result = np.empty_like(grid1)
-        cl.enqueue_copy(self.queue, result, result_buf).wait()
-        return result
 
-def addGrids_texture(self, grid1, grid2):
+        # 读取结果
+        result = np.empty_like(grid1)
+        cl.enqueue_copy(queue, result, result_buf).wait()
+        return Grid(grid1.shape[0], grid1.shape[1], result)#将numpy再转换成Grid，以便调用get_at_index
+
+
+def addGrids_texture(grid1, grid2):
+        grid1 = np.array(grid1.buffer, dtype=np.float32)
+        grid2 = np.array(grid2.buffer, dtype=np.float32)
+
         # 创建 OpenCL 图像对象
-        image_format = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT)
-        grid1_img = cl.image_from_array(self.ctx, grid1, 4)
-        grid2_img = cl.image_from_array(self.ctx, grid2, 4)
-        result_img = cl.Image(self.ctx, cl.mem_flags.WRITE_ONLY, image_format, shape=(grid1.shape[1], grid1.shape[0]))
+        image_format = cl.ImageFormat(cl.channel_order.INTENSITY, cl.channel_type.FLOAT)
+        grid1_img = cl.image_from_array(ctx, grid1, 1, mode='r', norm_int=False)
+        grid2_img = cl.image_from_array(ctx, grid2, 1, mode='r', norm_int=False)
+        result_img = cl.Image(ctx, cl.mem_flags.WRITE_ONLY, image_format, shape=(grid1.shape[1], grid1.shape[0]))
 
         # 设置内核参数并执行
-        kernel = self.program.add_grids_texture
-        kernel.set_args(grid1_img, grid2_img, result_img)
-
-        # 执行内核
         global_size = (grid1.shape[1], grid1.shape[0])
-        cl.enqueue_nd_range_kernel(self.queue, kernel, global_size, None)
+        prg.add_grids_texture(queue, global_size, None, grid1_img, grid2_img, result_img)
         
         # 读取结果
         result = np.empty_like(grid1)
-        cl.enqueue_copy(self.queue, result, result_img, origin=(0, 0), region=(grid1.shape[1], grid1.shape[0])).wait()
-        return result
+        cl.enqueue_copy(queue, result, result_img, origin=(0, 0), region=(grid1.shape[1], grid1.shape[0])).wait()
+        return Grid(grid1.shape[0], grid1.shape[1], result)#将numpy再转换成Grid，以便调用get_at_index
+
+
+def backprojectOpenCL(sinogram, size_x, size_y, spacing):
+
+    # 初始化
+    reco_grid = Grid(size_y, size_x, spacing)
+    reco_grid_buffer = np.zeros((size_y, size_x), dtype=np.float32)
+    reco_grid.set_buffer(reco_grid_buffer)
+    
+    result_array = np.zeros((size_y, size_x), dtype=np.float32)
+
+    # 设置原点
+    [origin_x, origin_y] = (0, -(sinogram.width - 1) * sinogram.spacing[1] / 2)
+    sinogram.set_origin([origin_x, origin_y])
+
+    # texture buffer
+    texture_sinogram = cl.image_from_array(ctx, sinogram.get_buffer().astype(np.float32),  mode="r")
+    texture_reco = cl.image_from_array(ctx, reco_grid.get_buffer().astype(np.float32), mode="w")
+
+    # 参数
+    num_projections = np.int32(sinogram.height)
+    detector_size = np.int32(sinogram.width)
+    angular_increment_degree = np.float32(sinogram.spacing[0])
+    detector_spacing = np.float32(sinogram.spacing[1])
+    detector_origin = np.float32(-(detector_size - 1) * detector_spacing / 2)
+
+    reco_sizeX = np.int32(size_x)
+    reco_sizeY = np.int32(size_y)
+
+    reco_originX = np.float32(-(size_x - 1) * spacing[1] / 2)
+    reco_originY = np.float32(-(size_y - 1) * spacing[0] / 2)
+
+    reco_spacingX = np.float32(spacing[1])
+    reco_spacingY = np.float32(spacing[0])
+
+    prg.backproject(queue, (size_y,size_x), None, texture_sinogram,texture_reco,num_projections,
+        detector_size,angular_increment_degree,detector_spacing,
+        detector_origin,reco_sizeX,reco_sizeY,
+        reco_originX,reco_originY,reco_spacingX,
+        reco_spacingY)
+
+
+    # 从gpu复制到cpu
+    cl.enqueue_copy(queue, result_array, texture_reco, origin=(0, 0), region=texture_reco.shape)
+
+    reco_grid.set_buffer(result_array)
+
+    return reco_grid

@@ -49,7 +49,7 @@ plt.show()
 
 
 t0 = time.time()
-reco_cl = Methods.backproject_cl(sinogram_filtered, grid_size[0], grid_size[1], grid_spacing)
+reco_cl = Methods.backprojectOpenCL(sinogram_filtered, grid_size[0], grid_size[1], grid_spacing)
 t1 = time.time()
 print('backprojectionCL:', t1-t0)
 plt.imshow(reco_cl.buffer)

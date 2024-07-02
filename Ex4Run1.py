@@ -41,16 +41,16 @@ print("np_grid3[{}, {}]: ".format(height - 1, width - 1), np_grid3[height - 1, w
 
 # Test addition with OpenCL texture
 t0 = time.time()
-grid4 = Methods.addGrids_normal(grid1, grid2)
-t1 = time.time()
-print("Time for OpenCL normal buffer addition: ", t1-t0)
-print("grid3[{}, {}]: ".format(height - 1, width - 1), grid3.get_at_index(height - 1, width - 1))
-
-t0 = time.time()
 grid3 = Methods.addGrids_texture(grid1, grid2)
 t1 = time.time()
 print("Time for OpenCL texture addition: ", t1-t0)
 print("grid3[{}, {}]: ".format(height - 1, width - 1), grid3.get_at_index(height - 1, width - 1))
+
+t0 = time.time()
+grid4 = Methods.addGrids_normal(grid1, grid2)
+t1 = time.time()
+print("Time for OpenCL normal buffer addition: ", t1-t0)
+print("grid4[{}, {}]: ".format(height - 1, width - 1), grid4.get_at_index(height - 1, width - 1))
 
 
 # For OpenCL back projection, please see backprojection.cl file and Methods.backproject_cl(sinogram, reco_sizeX, reco_sizeY, reco_spacing)
