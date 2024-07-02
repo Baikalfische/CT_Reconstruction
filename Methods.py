@@ -344,21 +344,21 @@ def addGrids_texture(grid1, grid2):
 def backprojectOpenCL(sinogram, size_x, size_y, spacing):
 
     # 初始化
-    reco_grid = Grid(size_y, size_x, spacing)
-    reco_grid_buffer = np.zeros((size_y, size_x), dtype=np.float32)
+    reco_grid = Grid(size_x, size_y, spacing)
+    reco_grid_buffer = np.zeros((size_x, size_y), dtype=np.float32)
     reco_grid.set_buffer(reco_grid_buffer)
-    
-    result_array = np.zeros((size_y, size_x), dtype=np.float32)
+
+    #用于存储从OpenCL图像对象复制到CPU的结果数据
+    result_array = np.zeros((size_x, size_y), dtype=np.float32)
 
     # 设置原点
-    [origin_x, origin_y] = (0, -(sinogram.width - 1) * sinogram.spacing[1] / 2)
-    sinogram.set_origin([origin_x, origin_y])
+    sinogram.set_origin([0, -(sinogram.width - 1) * sinogram.spacing[1] / 2])
 
     # texture buffer
     texture_sinogram = cl.image_from_array(ctx, sinogram.get_buffer().astype(np.float32),  mode="r")
     texture_reco = cl.image_from_array(ctx, reco_grid.get_buffer().astype(np.float32), mode="w")
 
-    # 参数
+    # 设置内核backproject参数
     num_projections = np.int32(sinogram.height)
     detector_size = np.int32(sinogram.width)
     angular_increment_degree = np.float32(sinogram.spacing[0])
@@ -368,13 +368,14 @@ def backprojectOpenCL(sinogram, size_x, size_y, spacing):
     reco_sizeX = np.int32(size_x)
     reco_sizeY = np.int32(size_y)
 
-    reco_originX = np.float32(-(size_x - 1) * spacing[1] / 2)
-    reco_originY = np.float32(-(size_y - 1) * spacing[0] / 2)
+    reco_originX = np.float32(-(size_x - 1) * spacing[0] / 2)
+    reco_originY = np.float32(-(size_y - 1) * spacing[1] / 2)
 
-    reco_spacingX = np.float32(spacing[1])
-    reco_spacingY = np.float32(spacing[0])
+    reco_spacingX = np.float32(spacing[0])
+    reco_spacingY = np.float32(spacing[1])
 
-    prg.backproject(queue, (size_y,size_x), None, texture_sinogram,texture_reco,num_projections,
+    #执行内核
+    prg.backproject(queue, (size_x,size_y), None, texture_sinogram,texture_reco,num_projections,
         detector_size,angular_increment_degree,detector_spacing,
         detector_origin,reco_sizeX,reco_sizeY,
         reco_originX,reco_originY,reco_spacingX,
