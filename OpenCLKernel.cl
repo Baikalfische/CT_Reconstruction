@@ -19,9 +19,9 @@ kernel void add_grids_texture(read_only image2d_t grid1, read_only image2d_t gri
     sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
     if(coords.x < width && coords.y < height){
-    float4 val1 = read_imagef(grid1, sampler, coords);  // 从 grid1 读取值
-    float4 val2 = read_imagef(grid2, sampler, coords);  // 从 grid2 读取值
-    float4 res = val1 + val2;  // 相加操作
+        float4 val1 = read_imagef(grid1, sampler, coords);  // 从 grid1 读取值
+        float4 val2 = read_imagef(grid2, sampler, coords);  // 从 grid2 读取值
+        float4 res = val1 + val2;  // 相加操作
     
     write_imagef(result, coords, res);  // 将结果写入 result 图像对象
     }
