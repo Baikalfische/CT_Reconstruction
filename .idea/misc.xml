@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="CT" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="CT" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="CTReconstruction" project-jdk-type="Python SDK" />
 </project>

@@ -305,6 +305,7 @@ prg = cl.Program(ctx, kernel).build()
 def addGrids_normal(grid1, grid2):
         grid1 = np.array(grid1.buffer, dtype=np.float32)
         grid2 = np.array(grid2.buffer, dtype=np.float32)
+
         # 创建 OpenCL 缓冲区
         mf = cl.mem_flags
         grid1_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid1)
@@ -312,13 +313,19 @@ def addGrids_normal(grid1, grid2):
         result_buf = cl.Buffer(ctx, mf.WRITE_ONLY, grid1.nbytes)
 
         # 设置内核参数并执行
-        global_size = (grid1.shape[1], grid1.shape[0])
+        global_size = (grid1.shape[0], grid1.shape[1])
+        print("global_size:", global_size)
+        print("grid1.shape:", grid1.shape)
+        print("grid2.shape:", grid2.shape)
         prg.add_grids_normal(queue, global_size, None, grid1_buf, grid2_buf, result_buf, np.int32(grid1.shape[1]), np.int32(grid1.shape[0]))
 
         # 读取结果
         result = np.empty_like(grid1)
         cl.enqueue_copy(queue, result, result_buf).wait()
-        return Grid(grid1.shape[0], grid1.shape[1], result)#将numpy再转换成Grid，以便调用get_at_index
+
+        #将array转成Grid实例，以便Ex4Run1调用get_at_index
+
+        return
 
 
 def addGrids_texture(grid1, grid2):
@@ -329,15 +336,15 @@ def addGrids_texture(grid1, grid2):
         image_format = cl.ImageFormat(cl.channel_order.INTENSITY, cl.channel_type.FLOAT)
         grid1_img = cl.image_from_array(ctx, grid1, 1, mode='r', norm_int=False)
         grid2_img = cl.image_from_array(ctx, grid2, 1, mode='r', norm_int=False)
-        result_img = cl.Image(ctx, cl.mem_flags.WRITE_ONLY, image_format, shape=(grid1.shape[1], grid1.shape[0]))
+        result_img = cl.Image(ctx, cl.mem_flags.WRITE_ONLY, image_format, shape=(grid1.shape[0], grid1.shape[1]))
 
         # 设置内核参数并执行
-        global_size = (grid1.shape[1], grid1.shape[0])
+        global_size = (grid1.shape[0], grid1.shape[1])
         prg.add_grids_texture(queue, global_size, None, grid1_img, grid2_img, result_img)
         
         # 读取结果
         result = np.empty_like(grid1)
-        cl.enqueue_copy(queue, result, result_img, origin=(0, 0), region=(grid1.shape[1], grid1.shape[0])).wait()
+        cl.enqueue_copy(queue, result, result_img, origin=(0, 0), region=(grid1.shape[0], grid1.shape[1])).wait()
         return Grid(grid1.shape[0], grid1.shape[1], result)#将numpy再转换成Grid，以便调用get_at_index
 
 
